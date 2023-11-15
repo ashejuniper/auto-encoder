@@ -1,4 +1,3 @@
-// import { INeuralNetworkData } from "./neural-network";
 const { NeuralNetworkGPU } = require('brain.js');
 
 function word2vec (
@@ -51,7 +50,6 @@ function vec2word (
 
             const bit = Math.round(predictedBit);
 
-            // byte |= bit << (7 - localBitIndex);
             byte |= bit << localBitIndex;
         }
 
