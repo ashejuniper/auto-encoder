@@ -1,2 +1,3 @@
 # auto-encoder
- Create a GPU-accelerated autoencoder network
+
+Create a GPU-accelerated autoencoder network
