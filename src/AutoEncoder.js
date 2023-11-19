@@ -218,12 +218,9 @@ class AutoEncoder {
             decodedData[i] = decodedDataObject[i];
         }
 
-        console.log(this._dataType)
-
         if (this._dataType === 'string') {
             decodedData = vec2word(decodedData);
             decodedData = decodedData.substring(0, decodedData.indexOf(' '));
-            console.log('string!!', decodedData.length)
         }
 
         return decodedData;
