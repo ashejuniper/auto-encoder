@@ -25,19 +25,19 @@ function word2vec (
 
     const vec = new Float32Array(bitLength);
 
+    let index = 0;
+
     for (let char of word) {
         let byte = char.charCodeAt(0);
 
-        let bit0 = byte & 0b0000_0001;
-        let bit1 = (byte & 0b0000_0010) >> 1;
-        let bit2 = (byte & 0b0000_0100) >> 2;
-        let bit3 = (byte & 0b0000_1000) >> 3;
-        let bit4 = (byte & 0b0001_0000) >> 4;
-        let bit5 = (byte & 0b0010_0000) >> 5;
-        let bit6 = (byte & 0b0100_0000) >> 6;
-        let bit7 = (byte & 0b1000_0000) >> 7;
-
-        vec.push(bit0, bit1, bit2, bit3, bit4, bit5, bit6, bit7);
+        vec[index++] = byte & 0b0000_0001;
+        vec[index++] = (byte & 0b0000_0010) >> 1;
+        vec[index++] = (byte & 0b0000_0100) >> 2;
+        vec[index++] = (byte & 0b0000_1000) >> 3;
+        vec[index++] = (byte & 0b0001_0000) >> 4;
+        vec[index++] = (byte & 0b0010_0000) >> 5;
+        vec[index++] = (byte & 0b0100_0000) >> 6;
+        vec[index++] = (byte & 0b1000_0000) >> 7;
     }
 
     return vec;
@@ -218,8 +218,12 @@ class AutoEncoder {
             decodedData[i] = decodedDataObject[i];
         }
 
+        console.log(this._dataType)
+
         if (this._dataType === 'string') {
-            decodedData = vec2word(decodedData).trim();
+            decodedData = vec2word(decodedData);
+            decodedData = decodedData.substring(0, decodedData.indexOf(' '));
+            console.log('string!!', decodedData.length)
         }
 
         return decodedData;
@@ -268,6 +272,16 @@ class AutoEncoder {
     }
 
     /**
+     * Predict the decoded output of a given input data.
+     * @param {AutoDecodedData} input
+     * The input to predict the decoded output of.
+     * @returns
+     */
+    run (input) {
+        return this.decode(this.encode(input));
+    }
+
+    /**
      * Stringify this `AutoEncoder`.
      * @returns {string}
      * A JSON `string` containing this `AutoEncoder`.
@@ -298,6 +312,19 @@ class AutoEncoder {
     train (data, options) {
         this._trainEncoder(data, options);
         this._trainDecoder(data, options);
+    }
+
+    /**
+     * Validate input by asserting that decoding the output of the encoder
+     * reproduces the original input.
+     * @param {AutoDecodedData} input
+     * The input to validate.
+     * @returns
+     */
+    validate (input) {
+        const output = this.run(input);
+        if (typeof output === 'string') return output === input;
+        else throw new Error(`\`validate()\` not yet implemented for data type '${this._dataType}'.`);
     }
 
     _getDecodedDataSize () {
