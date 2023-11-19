@@ -1,6 +1,6 @@
 {
   "name": "@ashejuniper/auto-encoder",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Create a GPU-accelerated autoencoder network",
   "main": "src/index.js",
   "scripts": {
