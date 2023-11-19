@@ -1,6 +1,17 @@
 const { NeuralNetworkGPU } = require('brain.js');
 
 /**
+ * @typedef {Object} AutoEncoderTrainOptions
+ * @property {number} errorThresh
+ * Once the training error reaches `errorThresh`, training will be complete.
+ * @property {number} iterations
+ * Once the training epoch count reaches `iterations`, training will be
+ * complete.
+ * @property {number} learningRate
+ * The rate at which values will be changed.
+ */
+
+/**
  * @typedef {import('brain.js/dist/lookup').ITrainingDatum[]} ITrainingData
  */
 
@@ -111,7 +122,10 @@ function vec2word (
  *
  * autoEncoder.train(["this", "is", "an", "example"]);
  *
- * autoEncoder.encode("example");
+ * const encoded = autoEncoder.encode("example");
+ * const decoded = autoEncoder.decode(encoded);
+ *
+ * console.log(encoded, '->', decoded);
  * ```
  */
 class AutoEncoder {
@@ -216,6 +230,10 @@ class AutoEncoder {
 
         for (let i in decodedDataObject) {
             decodedData[i] = decodedDataObject[i];
+
+            if (this._dataType === 'boolean') {
+                decodedData[i] = decodedData[i] >= 0.5;
+            }
         }
 
         if (this._dataType === 'string') {
@@ -303,10 +321,10 @@ class AutoEncoder {
      * Train the auto encoder on a training data set.
      * @param {ITrainingData} data
      * The data set to train the neural networks on.
-     * @param {*} options
+     * @param {AutoEncoderTrainOptions} options
      * The options to pass to the neural network trainers.
      */
-    train (data, options) {
+    train (data, options = {}) {
         this._trainEncoder(data, options);
         this._trainDecoder(data, options);
     }
@@ -345,13 +363,15 @@ class AutoEncoder {
     }
 
     _getTranscodedDataSize () {
-        let size = this._transcodedDataSize;
+        let size
+            = (
+                this._getEncodedDataSize()
+                    + this._getDecodedDataSize()
+            )
+                * 0.5
+        ;
 
-        if (this._dataType === 'string') {
-            size *= 8;
-        }
-
-        return size;
+        return Math.round(size);
     }
 
     _getVecSize () {
@@ -366,7 +386,9 @@ class AutoEncoder {
         const trainingData = [];
 
         for (let output of data) {
-            output = output.padEnd(this._getWordSize());
+            if (this._dataType === 'string') {
+                output = output.padEnd(this._getWordSize());
+            }
 
             const rawOutput = output;
 
@@ -395,7 +417,9 @@ class AutoEncoder {
         const trainingData = [];
 
         for (let input of data) {
-            input = input.padEnd(this._getWordSize());
+            if (this._dataType === 'string') {
+                input = input.padEnd(this._getWordSize());
+            }
 
             if (typeof input === 'string') {
                 input = word2vec(
