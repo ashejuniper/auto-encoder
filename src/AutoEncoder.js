@@ -205,6 +205,27 @@ class AutoEncoder {
     }
 
     /**
+     * Decode encoded data.
+     * @param {Float32Array} encodedData The encoded data to decode.
+     * @returns {boolean[]|number[]|string} The decoded data.
+     */
+    decode (encodedData) {
+        let decodedDataObject = this.decoder.run(encodedData);
+
+        let decodedData = [];
+
+        for (let i in decodedDataObject) {
+            decodedData[i] = decodedDataObject[i];
+        }
+
+        if (this._dataType === 'string') {
+            decodedData = vec2word(decodedData).trim();
+        }
+
+        return decodedData;
+    }
+
+    /**
      * Encode data.
      * @param {AutoDecodedData} data
      * The data to encode.
@@ -244,27 +265,6 @@ class AutoEncoder {
 
         this.encoder.fromJSON(json.encoder);
         this.decoder.fromJSON(json.decoder);
-    }
-
-    /**
-     * Decode encoded data.
-     * @param {Float32Array} encodedData The encoded data to decode.
-     * @returns {boolean[]|number[]|string} The decoded data.
-     */
-    decode (encodedData) {
-        let decodedDataObject = this.decoder.run(encodedData);
-
-        let decodedData = [];
-
-        for (let i in decodedDataObject) {
-            decodedData[i] = decodedDataObject[i];
-        }
-
-        if (this._dataType === 'string') {
-            decodedData = vec2word(decodedData).trim();
-        }
-
-        return decodedData;
     }
 
     /**
@@ -330,12 +330,41 @@ class AutoEncoder {
         return size;
     }
 
+    _getVecSize () {
+        return this._getWordSize() * 8;
+    }
+
     _getWordSize () {
         return this._getDecodedDataSize() / 8;
     }
 
-    _getVecSize () {
-        return this._getWordSize() * 8;
+    _trainDecoder (data, options) {
+        const trainingData = [];
+
+        for (let output of data) {
+            output = output.padEnd(this._getWordSize());
+
+            const rawOutput = output;
+
+            if (typeof output === 'string') {
+                output = word2vec(
+                    rawOutput,
+                    this._getWordSize()
+                );
+
+                this._dataType = 'string';
+            }
+            const input = this.encode(rawOutput);
+
+            const entry = {
+                input,
+                output
+            };
+
+            trainingData.push(entry);
+        }
+
+        this.decoder.train(trainingData, options);
     }
 
     _trainEncoder (data, options) {
@@ -375,35 +404,6 @@ class AutoEncoder {
         }
 
         this.encoder.train(trainingData, options);
-    }
-
-    _trainDecoder (data, options) {
-        const trainingData = [];
-
-        for (let output of data) {
-            output = output.padEnd(this._getWordSize());
-
-            const rawOutput = output;
-
-            if (typeof output === 'string') {
-                output = word2vec(
-                    rawOutput,
-                    this._getWordSize()
-                );
-
-                this._dataType = 'string';
-            }
-            const input = this.encode(rawOutput);
-
-            const entry = {
-                input,
-                output
-            };
-
-            trainingData.push(entry);
-        }
-
-        this.decoder.train(trainingData, options);
     }
 }
 
